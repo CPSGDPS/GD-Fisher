@@ -1,0 +1,26 @@
+{
+  "name": "aredl-fisher",
+  "version": "1.0.0",
+  "description": "Discord fishing app for the All Rated Extreme Demons List",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "node deployCommands.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bottleneck": "^2.19.5",
+    "discord.js": "^14.16.2",
+    "dotenv": "^16.4.5",
+    "log4js": "^6.9.1",
+    "node-cron": "^3.0.3",
+    "pagination.djs": "^4.0.15",
+    "reflect-metadata": "^0.2.2",
+    "sequelize": "^6.37.3",
+    "simple-git": "^3.27.0",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "eslint": "^9.11.1"
+  }
+}
