@@ -212,7 +212,7 @@ module.exports = {
 			const id = interaction.options.getString('id');
 
 			try {
-				await db.update({ user: id }, { where: { tag: tag } });
+				await db.tags.update({ user: id }, { where: { tag: tag } });
 			} catch (error) {
 				logger.error('Failed to update tag:', error);
 				return await interaction.reply(':x: Failed to update tag');
