@@ -83,6 +83,8 @@ module.exports = {
 			let nb_fished_error = 0;
 			let nb_ignored = 0;
 
+			const unknownTags = [];
+
 			let message;
 			if (startMessageId) {
 				try {
@@ -120,6 +122,7 @@ module.exports = {
 
 									if (!userID) {
 										logger.warn(`User not found in any known guilds: ${extractedData.userTag}`);
+										unknownTags.push(extractedData.userTag);
 										nb_fished_error++;
 										continue;
 									}
@@ -196,6 +199,11 @@ module.exports = {
 						nb_messages += messagePage.size;
 						await interaction.editReply(`> ## Migrating data...\n> From: ${startMessageLink}\n> To: ${endMessageLink}\n> Fetched **${nb_messages}** messages from <#${channel.id}>\n> Fish data found: **${nb_fished}**\n> Errors: **${nb_fished_error}**\n> Ignored: **${nb_ignored}**`);
 					}));
+			}
+
+			logger.info(`Migration successful. Fetched ${nb_messages} messages from ${channel.id}. Fish data found: ${nb_fished}. Errors: ${nb_fished_error}. Ignored: ${nb_ignored}`);
+			if (unknownTags.length > 0) {
+				logger.warn(`Unknown tags:\n${unknownTags.join('\n')}`);
 			}
 			
 			return await interaction.editReply(`> ## :white_check_mark: Migration successful\n> Fetched **${nb_messages}** messages from <#${channel.id}>\n> Fish data found: **${nb_fished}**\n> Errors: **${nb_fished_error}**\n> Ignored: **${nb_ignored}**\n`);
