@@ -39,5 +39,5 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
-            cd bot/${{ github.ref_name }}
+            cd fishbot/${{ github.ref_name }}
             node ./deploy-commands.js
