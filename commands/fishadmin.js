@@ -197,7 +197,12 @@ module.exports = {
 
 						message = message != null ? (0 < messagePage.size ? messagePage.at(messagePage.size - 1) : null) : null;
 						nb_messages += messagePage.size;
-						await interaction.editReply(`> ## Migrating data...\n> From: ${startMessageLink}\n> To: ${endMessageLink}\n> Fetched **${nb_messages}** messages from <#${channel.id}>\n> Fish data found: **${nb_fished}**\n> Errors: **${nb_fished_error}**\n> Ignored: **${nb_ignored}**`);
+						try {
+							interaction.editReply(`> ## Migrating data...\n> From: ${startMessageLink}\n> To: ${endMessageLink}\n> Fetched **${nb_messages}** messages from <#${channel.id}>\n> Fish data found: **${nb_fished}**\n> Errors: **${nb_fished_error}**\n> Ignored: **${nb_ignored}**`);
+						}
+						catch (error) {
+							logger.error('Failed to edit reply:', error);
+						}
 					}));
 			}
 
@@ -205,8 +210,11 @@ module.exports = {
 			if (unknownTags.size > 0) {
 				logger.warn(`Unknown tags:\n${[...unknownTags].join('\n')}`);
 			}
-			
-			return await interaction.editReply(`> ## :white_check_mark: Migration successful\n> Fetched **${nb_messages}** messages from <#${channel.id}>\n> Fish data found: **${nb_fished}**\n> Errors: **${nb_fished_error}**\n> Ignored: **${nb_ignored}**\n`);
+			try {
+				return await interaction.editReply(`> ## :white_check_mark: Migration successful\n> Fetched **${nb_messages}** messages from <#${channel.id}>\n> Fish data found: **${nb_fished}**\n> Errors: **${nb_fished_error}**\n> Ignored: **${nb_ignored}**\n`);
+			} catch (error) {
+				logger.error('Failed to edit reply:', error);
+			}
 		} else if (subcommand === 'setid') {
 			const tag = interaction.options.getString('tag');
 			const id = interaction.options.getString('id');

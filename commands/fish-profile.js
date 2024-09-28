@@ -66,7 +66,7 @@ module.exports = {
 			.map(item => item.display);
 
 		const pagination = new Pagination(interaction, {limit: 10, prevDescription: mainData});
-		pagination.setTitle(`${targetTag}'s Profile`)
+		pagination.setTitle(`${targetTag}'s Fish Profile`)
 		pagination.setDescriptions(sortedFishedList);
 		pagination.setColor('DarkBlue');
 		pagination.render();
