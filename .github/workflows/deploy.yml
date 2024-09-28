@@ -38,9 +38,8 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
-          envs:
-            DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
-            DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           script: |
+            export DISCORD_CLIENT_ID=${{ secrets.DISCORD_CLIENT_ID }}
+            export DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
             cd fishbot/${{ github.ref_name }}
             node ./deploy-commands.js
