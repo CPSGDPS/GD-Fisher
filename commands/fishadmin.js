@@ -27,6 +27,20 @@ module.exports = {
 						.setDescription('The message ID to stop fetching at (optional)')
 						.setRequired(false)
 				)
+		).addSubcommand(subcommand =>
+			subcommand
+				.setName('setID')
+				.setDescription('Sets a new ID for a tag')
+				.addStringOption(option =>
+					option.setName('tag')
+						.setDescription('The tag to update')
+						.setRequired(true)
+				)
+				.addStringOption(option =>
+					option.setName('id')
+						.setDescription('The new ID to set')
+						.setRequired(true)
+				)
 		),
 	async execute(interaction) {
 
@@ -185,6 +199,18 @@ module.exports = {
 			}
 			
 			return await interaction.editReply(`> ## :white_check_mark: Migration successful\n> Fetched **${nb_messages}** messages from <#${channel.id}>\n> Fish data found: **${nb_fished}**\n> Errors: **${nb_fished_error}**\n> Ignored: **${nb_ignored}**\n`);
+		} else if (subcommand === 'setID') {
+			const tag = interaction.options.getString('tag');
+			const id = interaction.options.getString('id');
+
+			try {
+				await db.update({ user: id }, { where: { tag: tag } });
+			} catch (error) {
+				logger.error('Failed to update tag:', error);
+				return await interaction.reply(':x: Failed to update tag');
+			}
+
+			return await interaction.reply(`:white_check_mark: Updated tag: ${tag} to ID: ${id}`);
 		}
 	},
 };
