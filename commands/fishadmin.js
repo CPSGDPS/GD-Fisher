@@ -12,7 +12,6 @@ module.exports = {
 			subcommand
 				.setName('migrate')
 				.setDescription('Fetches all fish data from a channel and migrates it to the new database')
-				.setPermission('ADMINISTRATOR')
 				.addChannelOption(option =>
 					option.setName('channel')
 						.setDescription('The channel to fetch the data from')
