@@ -29,7 +29,7 @@ module.exports = {
 				)
 		).addSubcommand(subcommand =>
 			subcommand
-				.setName('setID')
+				.setName('setid')
 				.setDescription('Sets a new ID for a tag')
 				.addStringOption(option =>
 					option.setName('tag')
