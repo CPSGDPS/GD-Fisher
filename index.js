@@ -11,6 +11,16 @@ const updateCache = require('./scheduled/updateCache');
 log4js.configure('./log4js.json');
 const logger = log4js.getLogger();
 const sqlLogger = log4js.getLogger('sql');
+const errorLogger = log4js.getLogger('error');
+
+// Error logging
+process.on('uncaughtException', (err) => {
+	errorLogger.error('Uncaught Exception:', err);
+});
+  
+process.on('unhandledRejection', (reason, promise) => {
+	errorLogger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 // Env variables
 dotenv.config();

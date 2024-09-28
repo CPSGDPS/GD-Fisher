@@ -32,6 +32,7 @@
 	},
 	"categories": {
 	  "default": { "appenders": ["console", "logfile", "logarchive"], "level": "debug" },
-	  "sql": { "appenders": ["sqlfile", "sqlarchive"], "level": "debug" }
+	  "sql": { "appenders": ["sqlfile", "sqlarchive"], "level": "debug" },
+	  "error": { "appenders": ["console", "logfile", "logarchive"], "level": "error" }
 	}
   }

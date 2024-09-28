@@ -8,14 +8,19 @@ module.exports = {
 		const { git } = require('../index');
 
 		logger.info('Updating GitHub repository...');
-		const repoUrl = process.env.GITHUB_REPO_URL;
-		
-		if (!fs.existsSync(localRepoPath)) {
-			logger.info('Cloning the repository for the first time...');
-			await git.clone(repoUrl, localRepoPath);
-		} else {
-			logger.info('Pulling the latest changes from the repository...');
-			await git.cwd(localRepoPath).pull();
+		try {
+			const repoUrl = process.env.GITHUB_REPO_URL;
+			
+			if (!fs.existsSync(localRepoPath)) {
+				logger.info('Cloning the repository for the first time...');
+				await git.clone(repoUrl, localRepoPath);
+			} else {
+				logger.info('Pulling the latest changes from the repository...');
+				await git.cwd(localRepoPath).pull();
+			}
+		} catch (error) {
+			logger.error(`Error updating the repository:\n${error}`);
+			return -1;
 		}
 		logger.info('Successfully updated the repository');
 		
