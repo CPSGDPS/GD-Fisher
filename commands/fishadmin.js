@@ -207,7 +207,7 @@ module.exports = {
 			}
 			
 			return await interaction.editReply(`> ## :white_check_mark: Migration successful\n> Fetched **${nb_messages}** messages from <#${channel.id}>\n> Fish data found: **${nb_fished}**\n> Errors: **${nb_fished_error}**\n> Ignored: **${nb_ignored}**\n`);
-		} else if (subcommand === 'setID') {
+		} else if (subcommand === 'setid') {
 			const tag = interaction.options.getString('tag');
 			const id = interaction.options.getString('id');
 
