@@ -27,20 +27,20 @@ module.exports = {
 			data.push(`**${i+1}** - \`${discordUser?.tag ?? user.user}\` (${Math.round(user.amount * 100) / 100} points)`);
 		}
 
-		let currentPage = 0;
+		let currentPage = 1;
 		const pageSize = 20;
 		const userData = await db.users.findOne({ where: { user: interaction.user.id } });
 		if (userData) {
 			const rank = leaderboard.findIndex(user => user.user === interaction.user.id);
 			if (rank !== -1) {
-				currentPage = Math.floor(rank / pageSize);
+				currentPage = Math.floor(rank / pageSize) + 1;
 			}
 		}
 
 		const pagination = new Pagination(interaction, {
 			limit: pageSize,
 		});
-		pagination.setTitle('### AREDL Fish Leaderboard');
+		pagination.setTitle('AREDL Fish Leaderboard');
 		pagination.setDescriptions(data);
 		pagination.currentPage = currentPage;
 		pagination.render();

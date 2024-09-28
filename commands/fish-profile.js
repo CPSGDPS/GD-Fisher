@@ -40,7 +40,7 @@ module.exports = {
 		const meanScore = Math.round(userdata.mean * 100) / 100;
 		const timesFished = userdata.times_fished;
 
-		const mainData = `- Rank: **#${rank}**\n- Total Points: **${totalAmount}**\n- Average Points: **${meanScore}**\n- Times Fished: **${timesFished}**\n### Fished Levels:`;
+		const mainData = `- Rank: **#${rank}**\n- Total Points: **${totalAmount}**\n- Points on average: **${meanScore}**\n- Times Fished: **${timesFished}**\n### Fished Levels:`;
 
 		let fishedListData, fishedListFrequency;
 		try {
