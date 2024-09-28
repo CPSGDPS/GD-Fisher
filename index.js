@@ -45,8 +45,8 @@ async function init() {
 	logger.info('-'.repeat(40));
 	logger.info('AREDL Fisher starting...');
 	logger.info('-'.repeat(40));
-	await clientInit(client, db);
 	await sequelizeInit(db);
+	await clientInit(client, db);
 	await updateCache.execute();
 
 	logger.info('Logging in with discord...');

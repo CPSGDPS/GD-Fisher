@@ -98,7 +98,7 @@ module.exports = {
 								continue;
 							}
 							
-							if (msg.author.bot && isFishMessage(msg.content)) {
+							if (msg.author.id == process.env.DISCORD_MIGRATE_ID && isFishMessage(msg.content)) {
 								const extractedData = parseFishData(msg.content);
 								if (extractedData) {
 									const userID = await findUserInAllGuilds(db, interaction.client, extractedData.userTag);
@@ -109,10 +109,6 @@ module.exports = {
 										nb_fished_error++;
 										continue;
 									}
-									await db.processed.create({
-										id: msg.id,
-									});
-								
 									const levelfile = await db.cache.findOne({ where: { name: extractedData.levelName } });
 									const existingUser = await db.users.findOne({ where: { user: userID } });
 
