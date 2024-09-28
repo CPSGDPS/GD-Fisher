@@ -98,6 +98,7 @@ module.exports = {
 					.fetch({ limit: 1 })
 					.then(messagePage => (messagePage.size === 1 ? messagePage.at(0) : null));
 			}
+			let i = 0;
 
 			while (message) {
 				await limiter.schedule(() => channel.messages
@@ -197,12 +198,15 @@ module.exports = {
 
 						message = message != null ? (0 < messagePage.size ? messagePage.at(messagePage.size - 1) : null) : null;
 						nb_messages += messagePage.size;
-						try {
-							interaction.editReply(`> ## Migrating data...\n> From: ${startMessageLink}\n> To: ${endMessageLink}\n> Fetched **${nb_messages}** messages from <#${channel.id}>\n> Fish data found: **${nb_fished}**\n> Errors: **${nb_fished_error}**\n> Ignored: **${nb_ignored}**`);
+						if (i % 10 === 0) {
+							try {
+								interaction.editReply(`> ## Migrating data...\n> From: ${startMessageLink}\n> To: ${endMessageLink}\n> Fetched **${nb_messages}** messages from <#${channel.id}>\n> Fish data found: **${nb_fished}**\n> Errors: **${nb_fished_error}**\n> Ignored: **${nb_ignored}**`);
+							}
+							catch (error) {
+								logger.error('Failed to edit reply:', error);
+							}
 						}
-						catch (error) {
-							logger.error('Failed to edit reply:', error);
-						}
+						i++;
 					}));
 			}
 
