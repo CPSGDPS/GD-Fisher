@@ -21,7 +21,8 @@ module.exports = {
 
 		const data = [];
 
-		for (const user of leaderboard) {
+		for (let i = 0; i < leaderboard.length; i++) {
+			const user = leaderboard[i];
 			const discordUser = await interaction.client.users.fetch(user.user);
 			data.push(`\n**${i}** - \`${discordUser?.tag ?? user.user}\` (${Math.round(user.amount * 100) / 100} points)`);
 			i++;
