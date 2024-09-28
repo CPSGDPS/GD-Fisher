@@ -28,6 +28,7 @@ module.exports = {
 		const fished_score = (a / Math.sqrt(fished_pos / 50 + b) - 100);
 		
 		const userdata = await db.users.findOne({ where: { user: id } });
+		let totalAmount;
 
 		if (!userdata) {
 			await db.users.create({
@@ -38,6 +39,7 @@ module.exports = {
 				fished_list_frequency: '[1]',
 				times_fished: 1
 			});
+			totalAmount = fished_score;
 		} else {
 			totalAmount = userdata.amount + fished_score;
 			timesFished = userdata.times_fished + 1;
