@@ -18,8 +18,13 @@ module.exports = {
 						.setRequired(true)
 				)
 				.addStringOption(option =>
-					option.setName('message_id')
+					option.setName('start_message_id')
 						.setDescription('The message ID to start fetching from (optional)')
+						.setRequired(false)
+				)
+				.addStringOption(option =>
+					option.setName('end_message_id')
+						.setDescription('The message ID to stop fetching at (optional)')
 						.setRequired(false)
 				)
 		),
@@ -32,7 +37,7 @@ module.exports = {
 		const RateLimiter = require('bottleneck');
 		const limiter = new RateLimiter({
 			maxConcurrent: 1,
-			minTime: 2500 
+			minTime: 1000 
 		});
 
 		const subcommand = interaction.options.getSubcommand();
@@ -48,11 +53,21 @@ module.exports = {
 				return await interaction.editReply(':x: Failed to fetch the channel. Make sure that the bot has access to it');
 			}
 
-			const startMessageId = interaction.options.getString('message_id');
+			const startMessageId = interaction.options.getString('start_message_id');
+			const endMessageId = interaction.options.getString('end_message_id');
+
+			const startMessageLink = startMessageId
+			? `https://discord.com/channels/${interaction.guild.id}/${channel.id}/${startMessageId}`
+			: 'Latest Message';
+
+			const endMessageLink = endMessageId
+			? `https://discord.com/channels/${interaction.guild.id}/${channel.id}/${endMessageId}`
+			: 'Oldest Message';
 
 			let nb_messages = 0;
 			let nb_fished = 0;
 			let nb_fished_error = 0;
+			let nb_ignored = 0;
 
 			let message;
 			if (startMessageId) {
@@ -67,30 +82,44 @@ module.exports = {
 					.fetch({ limit: 1 })
 					.then(messagePage => (messagePage.size === 1 ? messagePage.at(0) : null));
 			}
-			
+
 			while (message) {
 				await limiter.schedule(() => channel.messages
 					.fetch({ limit: 100, before: message.id })
 					.then(async messagePage => {
 						for (const msg of messagePage.values()) {
+							if (endMessageId && msg.id === endMessageId) {
+								logger.info(`Reached end message ID: ${endMessageId}. Stopping migration.`);
+								message = null;
+								break;
+							}
+							if (await db.processed.findOne({ where: { id: msg.id } })) {
+								nb_ignored++;
+								continue;
+							}
+							
 							if (msg.author.bot && isFishMessage(msg.content)) {
 								const extractedData = parseFishData(msg.content);
 								if (extractedData) {
-									const user = guild.members.cache.find(member => member.user.tag === extractedData.userTag);
+									const userID = await findUserInAllGuilds(db, interaction.client, extractedData.userTag);
 									logger.info(`Extracted fish data: ${extractedData.userTag} - ${extractedData.amount} - ${extractedData.levelName} (${msg.id})`);
-									if (!user) {
-										logger.warn(`User not found: ${extractedData.userTag}`);
+
+									if (!userID) {
+										logger.warn(`User not found in any known guilds: ${extractedData.userTag}`);
 										nb_fished_error++;
 										continue;
 									}
-
+									await db.processed.create({
+										id: msg.id,
+									});
+								
 									const levelfile = await db.cache.findOne({ where: { name: extractedData.levelName } });
-									const existingUser = await db.users.findOne({ where: { user: user.id } });
+									const existingUser = await db.users.findOne({ where: { user: userID } });
 
 									if (!existingUser) {
-										logger.info(`Creating new user: ${user.id}`);
+										logger.info(`Creating new user: ${userID}`);
 										await db.users.create({
-											user: user.id,
+											user: userID,
 											amount: extractedData.amount,
 											mean: extractedData.amount,
 											fished_list: JSON.stringify(levelfile ? [levelfile.filename] : []),
@@ -98,7 +127,7 @@ module.exports = {
 											times_fished: 1,
 										});
 									} else {
-										logger.info(`Updating existing user: ${user.id}`);
+										logger.info(`Updating existing user: ${userID}`);
 										const totalAmount = existingUser.amount + extractedData.amount;
 										const timesFished = existingUser.times_fished + 1;
 										const meanScore = totalAmount / timesFished;
@@ -134,24 +163,32 @@ module.exports = {
 											fished_list: fishedList,
 											fished_list_frequency: fishedListFrequency,
 											times_fished: timesFished,
-										}, { where: { user: user.id } });
+										}, { where: { user: userID } });
 									}
+
+									await db.processed.create({
+										id: msg.id,
+									});
 
 									nb_fished++;
 								} else {
 									logger.warn(`Failed to parse fish data from message: ${msg.content}`);
 									nb_fished_error++;
 								}
+							} else {
+								await db.processed.create({
+									id: msg.id,
+								});
 							}
 						}
 
-						message = 0 < messagePage.size ? messagePage.at(messagePage.size - 1) : null;
+						message = message != null ? (0 < messagePage.size ? messagePage.at(messagePage.size - 1) : null) : null;
 						nb_messages += messagePage.size;
-						await interaction.editReply(`... Fetching ${nb_messages} messages from <#${channel.id}>. Fish data found: ${nb_fished} (errors: ${nb_fished_error})`);
+						await interaction.editReply(`> ## Migrating data...\n> From: ${startMessageLink}\n> To: ${endMessageLink}\n> Fetched **${nb_messages}** messages from <#${channel.id}>\n> Fish data found: **${nb_fished}**\n> Errors: **${nb_fished_error}**\n> Ignored: **${nb_ignored}**`);
 					}));
 			}
 			
-			return await interaction.editReply(`:white_check_mark: Successfully migrated ${nb_fished} fish data.`);
+			return await interaction.editReply(`> ## :white_check_mark: Migration successful\n> Fetched **${nb_messages}** messages from <#${channel.id}>\n> Fish data found: **${nb_fished}**\n> Errors: **${nb_fished_error}**\n> Ignored: **${nb_ignored}**\n`);
 		}
 	},
 };
@@ -177,4 +214,36 @@ function parseFishData(content) {
 		logger.error('Failed to parse fish data from message:', error);
 	}
 	return null;
+}
+
+
+async function findUserInAllGuilds(db, client, userTag) {
+
+	const user = await db.tags.findOne({ where: { tag: userTag } });
+
+	if (user) {
+        return user.user;
+    }
+
+    for (const [guildId, guild] of client.guilds.cache) {
+        try {
+            await guild.members.fetch();
+            const user = guild.members.cache.find(member => member.user.tag === userTag);
+            if (user) {
+				await db.tags.create({
+					tag: userTag,
+					user: user.id,
+				});
+                return user.id;
+            }
+        } catch (error) {
+            logger.warn(`Failed to fetch members for guild: ${guild.name}`, error);
+        }
+    }
+
+	await db.tags.create({
+		tag: userTag,
+		user: null,
+	})
+    return null;
 }

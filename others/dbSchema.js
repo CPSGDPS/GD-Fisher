@@ -36,6 +36,22 @@ module.exports = {
 				type: DataTypes.INTEGER,
 			},
 		});
+
+		db.tags = sequelize.define('tags', {
+			user: {
+				type: DataTypes.STRING,
+			},
+			tag: {
+				type: DataTypes.STRING,
+			},
+		});
+
+		db.processed = sequelize.define('processed', {
+			id: {
+				type: DataTypes.STRING,
+				primaryKey: true,
+			},
+		});
 	return db;
 	}
 }

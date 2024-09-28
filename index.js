@@ -26,7 +26,7 @@ process.on('unhandledRejection', (reason, promise) => {
 dotenv.config();
 
 // Discord client
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages] });
 
 // Git repo setup
 const git = simpleGit();
@@ -42,6 +42,9 @@ const db = require('./others/dbSchema').createDbSchema(sequelize);
 
 // Initialize client
 async function init() {
+	logger.info('-'.repeat(40));
+	logger.info('AREDL Fisher starting...');
+	logger.info('-'.repeat(40));
 	await clientInit(client, db);
 	await sequelizeInit(db);
 	await updateCache.execute();
