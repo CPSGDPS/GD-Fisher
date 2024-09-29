@@ -10,7 +10,7 @@ module.exports = {
 		logger.info('Updating GitHub repositories...');
 		
 		try {
-			const repoUrl = lists.find(l => l.value === list).repoUrl;
+			const repoUrl = lists.find(l => l.value === list).repo;
 			const localRepoPath =  path.resolve(__dirname, `../data/repos/${list}`);
 			
 			if (!fs.existsSync(localRepoPath)) {
