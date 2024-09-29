@@ -52,6 +52,19 @@ module.exports = {
 				primaryKey: true,
 			},
 		});
+
+		db.guilds = sequelize.define('guilds', {
+			guild_id: {
+				type: DataTypes.STRING,
+				primaryKey: true,
+			},
+			guild_name: {
+				type: DataTypes.STRING,
+			},
+			enabled: {
+				type: DataTypes.BOOLEAN,
+			},
+		});
 	return db;
 	}
 }
