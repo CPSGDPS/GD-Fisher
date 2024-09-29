@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
 	enabled: true,
-	cooldown: 1,
+	cooldown: 3600,
 	data: new SlashCommandBuilder()
 		.setName('fish')
 		.setDescription('AREDL Fishy'),
