@@ -104,7 +104,7 @@ module.exports = {
 			}
 
 			try {
-			await db[list].update({
+				await db[list].update({
 					amount: totalAmount,
 					mean: meanScore,
 					fished_list: fishedList,
@@ -119,6 +119,6 @@ module.exports = {
 			}
 		}
 
-		return await interaction.reply(`> **${list.toUpperCase()}**\n> **\`${name}\`** fished **${fished_level_name}** (TOP ${fished_pos + 1})\n> +${Math.round(fished_score * 100) / 100} points (Total: ${Math.round(totalAmount * 100) / 100} points)`);
+		return await interaction.reply(`> **${list.toUpperCase()}**\n> **${name}** fished **${fished_level_name}** (TOP ${fished_pos + 1})\n> +${Math.round(fished_score * 100) / 100} points (Total: ${Math.round(totalAmount * 100) / 100} points)`);
 	},
 };
