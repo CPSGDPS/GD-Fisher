@@ -1,21 +1,31 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, AttachmentBuilder } = require('discord.js');
 const { Pagination } = require('pagination.djs');
 const logger = require('log4js').getLogger();
+const lists = require('../others/lists.js');
+const fs = require('node:fs');
+const { getList } = require('../others/utils.js');
 
 module.exports = {
 	enabled: true,
 	cooldown: 5,
 	data: new SlashCommandBuilder()
 		.setName('fish-lb')
-		.setDescription('AREDL Fishy leaderboard')
-		.setContexts(['Guild']),
+		.setDescription('GD Lists Fishy leaderboard')
+		.setContexts(['Guild'])
+		.addStringOption(option =>
+			option.setName('list')
+				.setDescription('The list you want to show the leaderboard of (your default list can be set with /settings)')
+				.setRequired(false)
+				.addChoices(lists.map(list => { return {name:list.name, value: list.value}})),
+		),
 
 	async execute(interaction) {
 		const { db } = require('../index.js');
 
+		const list = await getList(interaction);
 		let leaderboard;
 		try {
-			leaderboard = await db.users.findAll({
+			leaderboard = await db[list].findAll({
 				order: [['amount', 'DESC']],
 			});
 		} catch (error) {
@@ -51,7 +61,7 @@ module.exports = {
 
 		let currentPage = 1;
 		const pageSize = 20;
-		const userData = await db.users.findOne({ where: { user: interaction.user.id } });
+		const userData = await db[list].findOne({ where: { user: interaction.user.id } });
 		if (userData) {
 			const rank = filteredLeaderboard.findIndex(user => user.user === interaction.user.id);
 			if (rank !== -1) {
@@ -62,9 +72,22 @@ module.exports = {
 		const pagination = new Pagination(interaction, {
 			limit: pageSize,
 		});
-		pagination.setTitle('AREDL Fish Leaderboard');
-		pagination.setPrevDescription(`Server: **${interaction.guild.name}**\n`);
+
+		const logoPath = `assets/list-icons/${list}.webp`;
+		if (fs.existsSync(logoPath)) {
+			try {
+				const attachment = new AttachmentBuilder(logoPath, { name: 'listlogo.webp' });
+				pagination.setAttachments([attachment]);
+				pagination.setThumbnail(`attachment://${attachment.name}`);
+			} catch (error) {
+				logger.error(`Could not attach file: ${error}`);
+			}
+		} else {
+			logger.warn(`List logo file could not be found: ${logoPath}`);
+		}
+		pagination.setPrevDescription(`## ${list.toUpperCase()} Fish Leaderboard\nServer: **${interaction.guild.name}**\n`);
 		pagination.setDescriptions(data);
+		pagination.setColor('Gold');
 		pagination.currentPage = currentPage;
 		pagination.render();
 	},

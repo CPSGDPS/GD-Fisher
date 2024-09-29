@@ -69,10 +69,12 @@ module.exports = {
 	},
 
 	// Sequelize sync init
-	async sequelizeInit(db) {
+	async sequelizeInit(db, cache) {
 		logger.info('Syncing database data...');
 		for (const table of Object.keys(db)) await db[table].sync({ alter: true});
-		logger.info('Database sync done');
+		logger.info('Syncing cache data...');
+		for (const table of Object.keys(cache)) await cache[table].sync({ alter: true});
+		logger.info('Sequelize sync done');
 	},
 
 	// Scheduled cron tasks

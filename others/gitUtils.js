@@ -1,18 +1,20 @@
 const fs = require('fs');
 const path = require('path');
+const lists = require('./lists');
 const logger = require('log4js').getLogger();
-const localRepoPath = path.resolve(__dirname, '../data/repo');
 
 module.exports = {
-	async cloneOrPullRepo() {
+	async cloneOrPullRepo(list) {
 		const { git } = require('../index');
 
-		logger.info('Updating GitHub repository...');
+		logger.info('Updating GitHub repositories...');
+		
 		try {
-			const repoUrl = process.env.GITHUB_REPO_URL;
+			const repoUrl = lists.find(l => l.value === list).repoUrl;
+			const localRepoPath =  path.resolve(__dirname, `../data/repos/${list}`);
 			
 			if (!fs.existsSync(localRepoPath)) {
-				logger.info('Cloning the repository for the first time...');
+				logger.info('Cloning the repository for the first time, this may take a while...');
 				await git.clone(repoUrl, localRepoPath);
 			} else {
 				logger.info('Pulling the latest changes from the repository...');
@@ -25,8 +27,9 @@ module.exports = {
 		logger.info('Successfully updated the repository');
 		
 	},
-	async parseLevels() {
+	async parseLevels(list) {
 		const levels = [];
+		const localRepoPath =  path.resolve(__dirname, `../data/repos/${list}`);
 		let list_data;
 		try {
 			list_data = JSON.parse(fs.readFileSync(path.join(localRepoPath, 'data/_list.json'), 'utf8'));

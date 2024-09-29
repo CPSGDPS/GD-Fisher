@@ -1,37 +1,70 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, Collection } = require('discord.js');
+const logger = require('log4js').getLogger();
+const lists = require('../others/lists.js');
+const { getList } = require('../others/utils.js');
+
+const cooldowns = new Collection();
 
 module.exports = {
 	enabled: true,
-	cooldown: 3600,
+	cooldown: 5,
+	listCooldown: 3600,
 	data: new SlashCommandBuilder()
 		.setName('fish')
-		.setDescription('AREDL Fishy'),
+		.setDescription('GD Lists Fishing')
+		.addStringOption(option =>
+			option.setName('list')
+				.setDescription('The list you want to fish from (your default list can be set with /settings)')
+				.setRequired(false)
+				.addChoices(lists.map(list => { return {name:list.name, value: list.value}})),),
 	async execute(interaction) {
-		const { db } = require('../index.js');
-		const baseFactor = 0.0005832492374192035997815;
+		const { db, cache } = require('../index.js');
+	
 
 		const id = interaction.user.id;
 		const name = interaction.user.tag;
 
-		const levels = await db.cache.findAll({ order: [['position', 'ASC']]});
+		const list = await getList(interaction);
+		const listData = lists.find(l => l.value === list);
+
+		 const now = Date.now();
+		 const userListKey = `${id}-${list}`;
+		 const cooldownAmount = this.listCooldown * 1000;
+ 
+		 if (cooldowns.has(userListKey)) {
+			 const expirationTime = cooldowns.get(userListKey) + cooldownAmount;
+			 if (now < expirationTime) {
+				 const expiredTimestamp = Math.round(expirationTime / 1000);
+				 return interaction.reply({ content: `Please wait, you are on a cooldown for the \`${list.toUpperCase()}\` list. You can fish again <t:${expiredTimestamp}:R>.`, ephemeral: true });
+			 }
+		 }
+ 
+		 cooldowns.set(userListKey, now);
+		 setTimeout(() => cooldowns.delete(userListKey), cooldownAmount);
+
+		let levels;
+		try {
+			levels = await cache[list].findAll({ order: [['position', 'ASC']]});
+		} catch (error) {
+			logger.error('Error fetching levels:', error);
+			return await interaction.reply(':x: An error occurred while fetching the levels');
+		}
 		if (!levels || levels.length === 0) {
 			return await interaction.reply(':x: No levels available');
 		}
 
-		const level_count = levels.length;
+		const level_count = Math.min(levels.length, listData.cutoff ?? levels.length);
 		const fished_pos = Math.floor(Math.random() * level_count);
 		const fished_level_name = levels[fished_pos].name;
 		const fished_level_file = levels[fished_pos].filename;
 
-		const b = (level_count - 1) * baseFactor;
-		const a = 600 * Math.sqrt(b);
-		const fished_score = (a / Math.sqrt(fished_pos / 50 + b) - 100);
+		const fished_score = lists.find(l => l.value === list).score(fished_pos, level_count);
 		
-		const userdata = await db.users.findOne({ where: { user: id } });
+		const userdata = await db[list].findOne({ where: { user: id } });
 		let totalAmount;
 
 		if (!userdata) {
-			await db.users.create({
+			await db[list].create({
 				user: id,
 				amount: fished_score,
 				mean: fished_score,
@@ -71,7 +104,7 @@ module.exports = {
 			}
 
 			try {
-			await db.users.update({
+			await db[list].update({
 					amount: totalAmount,
 					mean: meanScore,
 					fished_list: fishedList,
@@ -86,6 +119,6 @@ module.exports = {
 			}
 		}
 
-		return await interaction.reply(`> **${name}** fished **${fished_level_name}** (TOP ${fished_pos + 1})\n> +${Math.round(fished_score * 100) / 100} points (Total: ${Math.round(totalAmount * 100) / 100} points)`);
+		return await interaction.reply(`> **${list.toUpperCase()}**\n> **\`${name}\`** fished **${fished_level_name}** (TOP ${fished_pos + 1})\n> +${Math.round(fished_score * 100) / 100} points (Total: ${Math.round(totalAmount * 100) / 100} points)`);
 	},
 };

@@ -39,13 +39,14 @@ const sequelize = new Sequelize({
 });
 
 const db = require('./others/dbSchema').createDbSchema(sequelize);
+const cache = require('./others/dbSchema').createCacheSchema(sequelize);
 
 // Initialize client
 async function init() {
 	logger.info('-'.repeat(40));
 	logger.info('AREDL Fisher starting...');
 	logger.info('-'.repeat(40));
-	await sequelizeInit(db);
+	await sequelizeInit(db, cache);
 	await clientInit(client, db);
 	await updateCache.execute();
 
@@ -53,7 +54,7 @@ async function init() {
 	client.login(process.env.DISCORD_TOKEN);
 }
 
-module.exports = { db, client, git, sequelize };
+module.exports = { db, cache, client, git, sequelize };
 
 init();
 
