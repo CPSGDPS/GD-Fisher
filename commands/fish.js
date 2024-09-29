@@ -13,11 +13,11 @@ module.exports = {
 		const id = interaction.user.id;
 		const name = interaction.user.tag;
 
-		
 		const levels = await db.cache.findAll({ order: [['position', 'ASC']]});
 		if (!levels || levels.length === 0) {
 			return await interaction.reply(':x: No levels available');
 		}
+
 		const level_count = levels.length;
 		const fished_pos = Math.floor(Math.random() * level_count);
 		const fished_level_name = levels[fished_pos].name;
@@ -51,7 +51,7 @@ module.exports = {
 			}
 			catch (error) {
 				logger.error(error);
-				return await interaction.reply(':x: An error occurred while parsing the fished list data.');
+				return await interaction.reply(':x: An error occurred while getting the fished list data.');
 			}
 			const fishedIndex = fishedListData.indexOf(fished_level_file);
 			if (fishedIndex === -1) {
@@ -61,18 +61,29 @@ module.exports = {
 				fishedListFrequencyData[fishedIndex] += 1;
 			}
 
-			const fishedList = JSON.stringify(fishedListData);
-			const fishedListFrequency = JSON.stringify(fishedListFrequencyData);
+			let fishedList, fishedListFrequency;
+			try {
+				fishedList = JSON.stringify(fishedListData);
+				fishedListFrequency = JSON.stringify(fishedListFrequencyData);
+			} catch (error) {
+				logger.error(error);
+				return await interaction.reply(':x: An error occurred while saving the fished list data.');
+			}
 
+			try {
 			await db.users.update({
-				amount: totalAmount,
-				mean: meanScore,
-				fished_list: fishedList,
-				fished_list_frequency: fishedListFrequency,
-				times_fished: timesFished
-			}, {
-				where: { user: id }
-			});
+					amount: totalAmount,
+					mean: meanScore,
+					fished_list: fishedList,
+					fished_list_frequency: fishedListFrequency,
+					times_fished: timesFished
+				}, {
+					where: { user: id }
+				});
+			} catch (error) {
+				logger.error(error);
+				return await interaction.reply(':x: An error occurred while updating the user data.');
+			}
 		}
 
 		return await interaction.reply(`> **${name}** fished **${fished_level_name}** (TOP ${fished_pos + 1})\n> +${Math.round(fished_score * 100) / 100} points (Total: ${Math.round(totalAmount * 100) / 100} points)`);

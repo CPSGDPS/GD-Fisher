@@ -44,7 +44,7 @@ module.exports = {
 
 			// Execute command
 			try {
-				logger.info(`Command ran - ${interaction.guildId ?? 'DM'} - ${interaction.user.tag} (${interaction.user.id}) - ${interaction.commandName}`);
+				logger.info(`Command ran - ${interaction.guildId ?? 'DM'} - ${interaction.user.tag} (${interaction.user.id}) - ${interaction.commandName} - ${interaction.options.getSubcommand()}`);
 				await command.execute(interaction);
 			} catch (error) {
 				logger.error(`Error executing ${interaction.commandName}`);
