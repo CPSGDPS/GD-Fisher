@@ -61,6 +61,9 @@ module.exports = {
 			guild_name: {
 				type: DataTypes.STRING,
 			},
+			guild_member_count: {
+				type: DataTypes.INTEGER,
+			},
 			enabled: {
 				type: DataTypes.BOOLEAN,
 			},

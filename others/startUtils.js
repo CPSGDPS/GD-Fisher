@@ -100,5 +100,26 @@ module.exports = {
 			}
 		}
 		logger.info('Scheduled tasks setup done');
+	},
+
+	async updateGuilds(client) {
+		const { db } = require('../index.js');
+		logger.info('Updating guilds');
+		for (const guild of client.guilds.cache.values()) {
+			logger.info(`Connected to guild: ${guild.name} (${guild.id})`);
+			if (await db.guilds.findOne({ where: { guild_id: guild.id } })) {
+				logger.info(`Guild already exists in database, updating`);
+				await db.guilds.update({ guild_name: guild.name, guild_member_count: guild.memberCount, enabled: true }, { where: { guild_id: guild.id }});
+			} else {
+				logger.info(`Guild does not exist in database, adding`);
+				await db.guilds.create({
+					guild_id: guild.id,
+					guild_name: guild.name,
+					guild_member_count: guild.memberCount,
+					enabled: true,
+				});
+			}
+		}
+		logger.info('Guilds updated');
 	}
 }

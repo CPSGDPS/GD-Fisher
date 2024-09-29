@@ -11,12 +11,13 @@ module.exports = {
 			const guildExists = await db.guilds.findOne({ where: { guild_id: guild.id } });
 			if (guildExists) {
 				logger.info(`Guild already exists in database, updating`);
-				await db.guilds.update({ guild_name: guild.name, enabled: true }, { where: { guild_id: guild.id } });
+				await db.guilds.update({ guild_name: guild.name, guild_member_count: guild.memberCount, enabled: true }, { where: { guild_id: guild.id } });
 			} else {
 				logger.info(`Guild does not exist in database, adding`);
 				await db.guilds.create({
 					guild_id: guild.id,
 					guild_name: guild.name,
+					guild_member_count: guild.memberCount,
 					enabled: true,
 				});
 			}
