@@ -59,12 +59,11 @@ module.exports = {
 			}
 		}
 
-		// Set up pagination
 		const pagination = new Pagination(interaction, {
 			limit: pageSize,
 		});
 		pagination.setTitle('AREDL Fish Leaderboard');
-		pagination.setPrevDescription(`Server: ${interaction.guild.name}`);
+		pagination.setPrevDescription(`Server: **${interaction.guild.name}**\n`);
 		pagination.setDescriptions(data);
 		pagination.currentPage = currentPage;
 		pagination.render();

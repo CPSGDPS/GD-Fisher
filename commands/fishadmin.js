@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const logger = require('log4js').getLogger();
 
 module.exports = {
-	enabled: true,
+	enabled: false,
 	cooldown: 5,
 	data: new SlashCommandBuilder()
 		.setName('fishadmin')
