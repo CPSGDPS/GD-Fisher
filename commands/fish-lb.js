@@ -25,53 +25,46 @@ module.exports = {
 			return await interaction.reply(':x: No leaderboard data available');
 		}
 
-		const data = [];
-		const usersToFetch = [];
-
-		for (const user of leaderboard) {
-			if (!interaction.client.users.cache.has(user.user)) {
-				usersToFetch.push(user.user);
-			}
-		}
-
-		if (usersToFetch.length > 0) {
-			try {
-				logger.log(`Fetching ${usersToFetch.length} users...`);
-				await interaction.client.users.fetch({ user: usersToFetch });
-			} catch (error) {
-				logger.warn('Some users could not be fetched:', error);
-			}
-		}
-
+		let guildMembers;
 		try {
-			for (let i = 0; i < leaderboard.length; i++) {
-				const user = leaderboard[i];
-				const discordUser = interaction.client.users.cache.get(user.user);
-				data.push(`**${i+1}** - \`${discordUser?.tag ?? user.user}\` (${Math.round(user.amount * 100) / 100} points)`);
-			}
+			guildMembers = await interaction.guild.members.fetch({cache: true});
+		} catch (error) {
+			logger.error('Error fetching guild members:', error);
+			return await interaction.reply(':x: An error occurred while fetching guild members.');
 		}
-		catch (error) {
-			logger.error('Error fetching leaderboard:', error);
-			return await interaction.reply(':x: An error occurred while fetching the leaderboard');
+
+		const guildMemberIds = new Set(guildMembers.map(member => member.user.id));
+		const filteredLeaderboard = leaderboard.filter(user => guildMemberIds.has(user.user));
+
+		if (filteredLeaderboard.length === 0) {
+			return await interaction.reply(':x: No leaderboard data available for members of this guild');
 		}
-		
+
+		const data = [];
+		for (let i = 0; i < filteredLeaderboard.length; i++) {
+			const user = filteredLeaderboard[i];
+			const discordUser = interaction.client.users.cache.get(user.user);
+			data.push(`**${i + 1}** - \`${discordUser?.tag ?? user.user}\` (${Math.round(user.amount * 100) / 100} points)`);
+		}
+
 		let currentPage = 1;
 		const pageSize = 20;
 		const userData = await db.users.findOne({ where: { user: interaction.user.id } });
 		if (userData) {
-			const rank = leaderboard.findIndex(user => user.user === interaction.user.id);
+			const rank = filteredLeaderboard.findIndex(user => user.user === interaction.user.id);
 			if (rank !== -1) {
 				currentPage = Math.floor(rank / pageSize) + 1;
 			}
 		}
 
+		// Set up pagination
 		const pagination = new Pagination(interaction, {
 			limit: pageSize,
 		});
 		pagination.setTitle('AREDL Fish Leaderboard');
+		pagination.setPrevDescription(`Server: ${interaction.guild.name}`);
 		pagination.setDescriptions(data);
 		pagination.currentPage = currentPage;
 		pagination.render();
-		return;
 	},
 };
