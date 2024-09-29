@@ -11,7 +11,7 @@ module.exports = {
 		.addStringOption(option =>
 			option.setName('defaultlist')
 				.setDescription('The list you want to fish from by default, without having to specify it on each command')
-				.setRequired(false)
+				.setRequired(true)
 				.addChoices(lists)),
 	async execute(interaction) {
 		const { db } = require('../index.js');
