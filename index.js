@@ -44,7 +44,7 @@ const cache = require('./others/dbSchema').createCacheSchema(sequelize);
 // Initialize client
 async function init() {
 	logger.info('-'.repeat(40));
-	logger.info('AREDL Fisher starting...');
+	logger.info('GD Fisher starting...');
 	logger.info('-'.repeat(40));
 	await sequelizeInit(db, cache);
 	await clientInit(client, db);
