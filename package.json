@@ -15,7 +15,6 @@
     "dotenv": "^16.4.5",
     "log4js": "^6.9.1",
     "node-cron": "^3.0.3",
-    "pagination.djs": "^4.0.15",
     "reflect-metadata": "^0.2.2",
     "sequelize": "^6.37.3",
     "simple-git": "^3.27.0",

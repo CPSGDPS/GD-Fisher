@@ -1,5 +1,14 @@
-const { SlashCommandBuilder, AttachmentBuilder, ComponentType, StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
-const { Pagination, ExtraRowPosition } = require('pagination.djs');
+const {
+    SlashCommandBuilder,
+    AttachmentBuilder,
+    StringSelectMenuBuilder,
+    ActionRowBuilder,
+    ComponentType,
+    ButtonStyle,
+    ButtonBuilder,
+    EmbedBuilder,
+} = require('discord.js');
+const { ButtonPaginationBuilder } = require('@thenorthsolution/djs-pagination');
 const logger = require('log4js').getLogger();
 const lists = require('../others/lists.js');
 const fs = require('node:fs');
@@ -22,10 +31,13 @@ module.exports = {
 
 	async execute(interaction) {
 		const { db } = require('../index.js');
+        let response = await interaction.reply({
+            content: 'Loading leaderboard...'
+        });
 
-		let list = await getList(interaction);
-
-		const response = await interaction.reply({ content: 'Loading leaderboard...' });
+        let list = await getList(interaction);
+        let pagination;
+        const pageSize = 10;
 		
 		let guildMembers;
 		try {
@@ -37,112 +49,151 @@ module.exports = {
 
 		const guildMemberIds = new Set(guildMembers.map(member => member.user.id));
 
-		const pagination = new Pagination(interaction, {
-			limit: pageSize,
-		});
+		const attachments = {};
+        lists.forEach((list) => {
+            const logoPath = `assets/list-icons/${list.value}.webp`;
+            if (fs.existsSync(logoPath)) {
+                try {
+                    attachments[list.value] = new AttachmentBuilder(logoPath, {
+                        name: 'listlogo.webp'
+                    });
+                } catch (error) {
+                    logger.error(`Could not attach file: ${error}`);
+                }
+            }
+        });
 
-		const selectLeaderboard = new StringSelectMenuBuilder()
-			.setCustomId('select-leaderboard')
-			.setPlaceholder('List selection')
-			.addOptions(lists.map(l => ({ label: l.name, value: l.value})));
+		async function fetchLeaderboard(list) {
+			let leaderboard;
+			try {
+				leaderboard = await db[list].findAll({
+					order: [['amount', 'DESC']],
+				});
+			} catch (error) {
+				logger.error('Error fetching leaderboard:', error);
+				return null;
+			}
+			return leaderboard.filter(user => guildMemberIds.has(user.user));
+		}
+		
+		async function formatData(leaderboard, list) {
+			const data = [];
+			for (let i = 0; i < leaderboard.length; i++) {
+				const user = leaderboard[i];
+				const discordUser = interaction.client.users.cache.get(user.user);
+				data.push(`**${i + 1}** - \`${discordUser?.tag ?? user.user}\` (${Math.round(user.amount * 100) / 100} points)`);
+			}
+			const chunks = [];
+			for (let i = 0; i < leaderboard.length; i += pageSize) {
+				chunks.push(data.slice(i, i + pageSize));
+			}
+			let defaultPage = 0;
+			const userData = await db[list].findOne({ where: { user: interaction.user.id } });
+			if (userData) {
+				const rank = leaderboard.findIndex(user => user.user === interaction.user.id);
+				if (rank !== -1) {
+					defaultPage = Math.floor(rank / pageSize);
+				}
+			}
+			return { chunks:chunks, defaultPage: defaultPage };
+		}
 
-		const listActionRow = new ActionRowBuilder().addComponents(selectLeaderboard);
+		const leaderboardData = {};
+        await Promise.all(
+            lists.map(async (l) => {
+                try {
+                    const leaderboard = (await fetchLeaderboard(l.value)).filter(user => guildMemberIds.has(user.user));
+					const { chunks, defaultPage } = await formatData(leaderboard, l.value);
+					leaderboardData[l.value] = {
+						chunks: chunks,
+						defaultPage: defaultPage,
+						mainData: `## ${l.name} Fish Leaderboard\nServer: **${interaction.guild.name}**\n`
+					};
+                } catch (error) {
+                    logger.error(`Could not fetch leaderboard for list ${l.value}: ${error}`);
+                }
+            })
+        );
 
-		pagination.addActionRows([listActionRow], ExtraRowPosition.Bottom);
-		pagination.setColor('Gold');
-		pagination.setContents('');
+		async function updatePagination(interaction) {
+			const leaderboard = leaderboardData[list];
 
-		async function updatePagination(list, interaction) {
-			const leaderboard = await fetchLeaderboard(list, db);
-
-			if (!leaderboard) {
+			if (!leaderboard?.chunks) {
 				return await interaction.editReply(':x: An error occurred while fetching the leaderboard');
 			}
-
-			if (leaderboard.length === 0) {
-				return await interaction.editReply(':x: No leaderboard data available');
-			}
-			
-			const filteredLeaderboard = leaderboard.filter(user => guildMemberIds.has(user.user));
-
-			if (filteredLeaderboard.length === 0) {
+			if (leaderboard.chunks.length === 0) {
 				return await interaction.editReply(':x: No leaderboard data available for members of this guild');
 			}
 
-			const { data, currentPage } = await formatData(filteredLeaderboard, interaction, list, db);
+			const attachment = attachments[list];
 
-			const logoPath = `assets/list-icons/${list}.webp`;
-			if (fs.existsSync(logoPath)) {
-				try {
-					const attachment = new AttachmentBuilder(logoPath, { name: 'listlogo.webp' });
-					pagination.setAttachments([attachment]);
-					pagination.setThumbnail(`attachment://${attachment.name}`);
-				} catch (error) {
-					logger.error(`Could not attach file: ${error}`);
-				}
-			} else {
-				logger.warn(`List logo file could not be found: ${logoPath}`);
-			}
+			const selectLeaderboard = new StringSelectMenuBuilder()
+                .setCustomId('select-leaderboard')
+                .addOptions(lists.map((l) => ({
+                    label: l.name,
+                    value: l.value
+                })))
+                .setPlaceholder(`List: ${lists.find((l) => l.value === list).name}`);
 
-			pagination.setPrevDescription(`## ${list.toUpperCase()} Fish Leaderboard\nServer: **${interaction.guild.name}**\n`);
-			pagination.setDescriptions(data);
-			pagination.currentPage = currentPage;
-			await pagination.render();
+			pagination?._collector?.stop();
+            pagination = new ButtonPaginationBuilder();
+            pagination
+                .addButton(new ButtonBuilder().setEmoji('⏮️').setCustomId('first').setStyle(ButtonStyle.Secondary), 'FirstPage')
+                .addButton(new ButtonBuilder().setEmoji('◀️').setCustomId('prev').setStyle(ButtonStyle.Secondary), 'PreviousPage')
+                .addButton(new ButtonBuilder().setEmoji('▶️').setCustomId('next').setStyle(ButtonStyle.Secondary), 'NextPage')
+                .addButton(new ButtonBuilder().setEmoji('⏭️').setCustomId('last').setStyle(ButtonStyle.Secondary), 'LastPage')
+                .setAuthorDependent(true);
+			pagination.setCurrentPageIndex(leaderboard.defaultPage - 1);
+			pagination.addAdditionalActionRows([new ActionRowBuilder().addComponents(selectLeaderboard)]);
+            pagination.on('error', (error) => logger.error(`Pagination error: ${error}`));
+
+			leaderboard.chunks.forEach((chunk, index) => {
+                const embedDescription = leaderboard.mainData + '\n' + chunk.join('\n');
+                const embed = new EmbedBuilder()
+                    .setDescription(embedDescription)
+                    .setColor('Gold')
+                    .setFooter({
+                        text: `Page ${index + 1} of ${leaderboard.chunks.length}`
+                    });
+
+                if (attachment) embed.setThumbnail(`attachment://${attachment.name}`);
+                pagination.addPages(embed);
+            });
+
+			await pagination.send({
+                command: interaction,
+                sendAs: 'EditMessage'
+            });
+            await interaction.editReply({
+                files: attachment ? [attachment] : [],
+                content: ''
+            });
 		}
 
-		await updatePagination(list, interaction);
+		await updatePagination(interaction);
 		
-		const listCollectorFilter = i => i.user.id === interaction.user.id && i.customId === 'select-leaderboard';
-		const listCollector = await response.createMessageComponentCollector({ filter: listCollectorFilter, componentType: ComponentType.StringSelect,  time: 300_000 });
+		const listCollectorFilter = (i) => i.user.id === interaction.user.id && i.customId === 'select-leaderboard';
+        const listCollector = response.createMessageComponentCollector({
+            filter: listCollectorFilter,
+            componentType: ComponentType.StringSelect,
+            time: 300_000,
+        });
 
-		listCollector.on('collect', async selectMenuInteraction => {
-			const new_list = selectMenuInteraction.values[0];
-			if (new_list === list) return await selectMenuInteraction.update({ content: ''});
-			list = new_list;
-			await updatePagination(list, selectMenuInteraction);
-			await selectMenuInteraction.update({ content: ''});
-		});
+        listCollector.on('collect', async (selectMenuInteraction) => {
+            await selectMenuInteraction.update({ content: ''  });
+            const new_list = selectMenuInteraction.values[0];
+            if (new_list !== list) {
+                list = new_list;
+                await updatePagination(selectMenuInteraction);
+            }
+        });
 
-		listCollector.on('end', async () => {
-			selectLeaderboard.setDisabled(true);
-			await interaction.editReply({
-				components: [new ActionRowBuilder().addComponents(selectLeaderboard)],
-			});
-		});
+        listCollector.on('end', async (_, reason) => {
+            if (reason === 'time') {
+                await interaction.editReply({
+                    components: []
+                });
+            }
+        });
 	},
 };
-
-async function fetchLeaderboard(list, db) {
-	let leaderboard;
-	try {
-		leaderboard = await db[list].findAll({
-			order: [['amount', 'DESC']],
-		});
-	} catch (error) {
-		logger.error('Error fetching leaderboard:', error);
-		return null;
-		
-	}
-
-	return leaderboard;
-}
-
-async function formatData(leaderboard, interaction, list, db) {
-	const data = [];
-		for (let i = 0; i < leaderboard.length; i++) {
-			const user = leaderboard[i];
-			const discordUser = interaction.client.users.cache.get(user.user);
-			data.push(`**${i + 1}** - \`${discordUser?.tag ?? user.user}\` (${Math.round(user.amount * 100) / 100} points)`);
-		}
-
-		let currentPage = 1;
-		const userData = await db[list].findOne({ where: { user: interaction.user.id } });
-		if (userData) {
-			const rank = leaderboard.findIndex(user => user.user === interaction.user.id);
-			if (rank !== -1) {
-				currentPage = Math.floor(rank / pageSize) + 1;
-			}
-		}
-
-		return { data:data, currentPage: currentPage };
-}
