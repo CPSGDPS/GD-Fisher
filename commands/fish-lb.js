@@ -13,7 +13,6 @@ const logger = require('log4js').getLogger();
 const lists = require('../others/lists.js');
 const fs = require('node:fs');
 const { getList } = require('../others/utils.js');
-const pageSize = 20;
 
 module.exports = {
 	enabled: true,
@@ -26,7 +25,7 @@ module.exports = {
 			option.setName('list')
 				.setDescription('The list you want to show the leaderboard of (your default list can be set with /settings)')
 				.setRequired(false)
-				.addChoices(lists.map(list => { return {name:list.name, value: list.value}})),
+				.addChoices(lists.map(list => { return {name:`${list.name} (${list.fullname})`, value: list.value}})),
 		),
 
 	async execute(interaction) {

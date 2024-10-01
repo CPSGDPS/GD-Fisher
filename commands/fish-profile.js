@@ -33,7 +33,7 @@ module.exports = {
 				.setDescription('The list to show your profile from (your default list can be set with /settings)')
 				.setRequired(false)
 				.addChoices(lists.map((list) => ({
-					name: list.name,
+					name: `${list.name} (${list.fullname})`,
 					value: list.value
            		})))
         ),
@@ -79,7 +79,7 @@ module.exports = {
             const meanScore = Math.round(userdata.mean * 100) / 100;
             const timesFished = userdata.times_fished;
 
-            const mainData = `## ${targetTag}'s fish profile\n### List: ${list.toUpperCase()}\n- Global Rank: **#${rank}**\n- Total Points: **${totalAmount}**\n- Points on average: **${meanScore}**\n- Times Fished: **${timesFished}**\n### Fished Levels:`;
+            const mainData = `## ${targetTag}'s fish profile\n### List: ${lists.find((l) => l.value == list)?.name}\n- Global Rank: **#${rank}**\n- Total Points: **${totalAmount}**\n- Points on average: **${meanScore}**\n- Times Fished: **${timesFished}**\n### Fished Levels:`;
 
             const fishedListData = userdata.fished_list ? JSON.parse(userdata.fished_list) : [];
             const fishedListFrequency = userdata.fished_list_frequency ? JSON.parse(userdata.fished_list_frequency) : [];
@@ -148,7 +148,7 @@ module.exports = {
         async function updatePagination(newInteraction) {
             const userData = userDataList[list];
             if (!(userData?.chunks[sorting])) {
-                return await newInteraction.editReply(`> :x: **${targetTag}** does not have any fishing data on **${list.toUpperCase()}**.`);
+                return await newInteraction.editReply(`> :x: **${targetTag}** does not have any fishing data on **${lists.find((l) => l.value == list)?.name}**.`);
             }
 
             const attachment = attachments[list];
@@ -165,7 +165,7 @@ module.exports = {
             const selectLeaderboard = new StringSelectMenuBuilder()
                 .setCustomId('select-leaderboard')
                 .addOptions(lists.map((l) => ({
-                    label: l.name,
+                    label: `${l.name} (${l.fullname})`,
                     value: l.value
                 })))
                 .setPlaceholder(`List: ${lists.find((l) => l.value === list).name}`);

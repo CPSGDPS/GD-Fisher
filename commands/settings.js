@@ -12,7 +12,7 @@ module.exports = {
 			option.setName('defaultlist')
 				.setDescription('The list you want to fish from by default, without having to specify it on each command')
 				.setRequired(true)
-				.addChoices(lists)),
+				.addChoices(lists.map(list => { return {name:`${list.name} (${list.fullname})`, value: list.value}}))),
 	async execute(interaction) {
 		const { db } = require('../index.js');
 		const id = interaction.user.id;
@@ -29,6 +29,6 @@ module.exports = {
 			return await interaction.reply(':x: An error occurred while setting your default list');
 		}
 		
-		return await interaction.reply({ content:`:white_check_mark: Your default list was set to \`${list.toUpperCase()}\` successfully.`, ephemeral: true });
+		return await interaction.reply({ content:`:white_check_mark: Your default list was set to \`${lists.find((l) => l.value == list)?.name}\` successfully.`, ephemeral: true });
 	},
 };

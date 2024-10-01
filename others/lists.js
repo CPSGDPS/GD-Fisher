@@ -1,6 +1,7 @@
 module.exports = [
 	{ 	
 		name:'AREDL',
+		fullname: "All Rated Extreme Demons List",
 	  	value:'aredl',
 	  	repo:'https://github.com/All-Rated-Extreme-Demon-List/AREDL.git',
 		cutoff: null,
@@ -13,6 +14,7 @@ module.exports = [
 	},
 	{ 
 		name:'HDL',
+		fullname: "Hard Demon List",
 		value:'hdl',
 		repo:'https://github.com/Robaleg9/HardDemonList.git',
 		cutoff: 150,

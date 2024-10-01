@@ -36,7 +36,7 @@ module.exports = {
 				logger.error('Error setting guild default:', error);
 				return await interaction.reply(':x: An error occurred while setting the guild default list');
 			}
-				return await interaction.reply({ content:`:white_check_mark: The default list for this server was set to \`${list.toUpperCase()}\` successfully.`, ephemeral: true });
+				return await interaction.reply({ content:`:white_check_mark: The default list for this server was set to \`${lists.find((l) => l.value == list)?.name}\` successfully.`, ephemeral: true });
 			}
 	},
 };
