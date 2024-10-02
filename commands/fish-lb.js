@@ -36,7 +36,7 @@ module.exports = {
 
         let list = await getList(interaction);
         let pagination;
-        const pageSize = 10;
+        const pageSize = 20;
 		
 		let guildMembers;
 		try {
