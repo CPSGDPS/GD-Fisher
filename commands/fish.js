@@ -16,11 +16,14 @@ module.exports = {
 			option.setName('list')
 				.setDescription('The list you want to fish from (your default list can be set with /settings)')
 				.setRequired(false)
-				.addChoices(lists.map(list => { return {name:`${list.name} (${list.fullname})`, value: list.value}})),),
+				.addChoices(lists.map(list => { return {name:`${list.name} (${list.fullname})`, value: list.value}})),)
+		.addUserOption(option =>
+			option.setName('for')
+				.setDescription('The user you want to fish for')
+				.setRequired(false)),
 	async execute(interaction) {
 		const { db, cache } = require('../index.js');
 	
-
 		const id = interaction.user.id;
 		const name = interaction.user.tag;
 
@@ -60,7 +63,9 @@ module.exports = {
 
 		const fished_score = levels[fished_pos].points ?? listData.score(fished_pos, level_count);
 		
-		const userdata = await db[list].findOne({ where: { user: id } });
+		
+		const userID = interaction.options.getUser('for')?.id ?? id;
+		const userdata = await db[list].findOne({ where: { user: userID } });
 		let totalAmount;
 
 		if (!userdata) {
@@ -119,6 +124,6 @@ module.exports = {
 			}
 		}
 
-		return await interaction.reply(`> **${listData?.name}**\n> **${name}** fished **${fished_level_name}** (TOP ${fished_pos + 1})\n> +${Math.round(fished_score * 100) / 100} points (Total: ${Math.round(totalAmount * 100) / 100} points)`);
+		return await interaction.reply(`> **${listData?.name}**\n> **${name}** fished **${fished_level_name}** (TOP ${fished_pos + 1})${userID != id ? ` for <@${userID}>` : ''}\n> +${Math.round(fished_score * 100) / 100} points (Total: ${Math.round(totalAmount * 100) / 100} points)`);
 	},
 };
