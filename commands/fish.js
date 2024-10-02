@@ -70,7 +70,7 @@ module.exports = {
 
 		if (!userdata) {
 			await db[list].create({
-				user: id,
+				user: userID,
 				amount: fished_score,
 				mean: fished_score,
 				fished_list: `["${fished_level_file}"]`,
@@ -116,7 +116,7 @@ module.exports = {
 					fished_list_frequency: fishedListFrequency,
 					times_fished: timesFished
 				}, {
-					where: { user: id }
+					where: { user: userID }
 				});
 			} catch (error) {
 				logger.error(error);
