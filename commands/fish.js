@@ -58,7 +58,7 @@ module.exports = {
 		const fished_level_name = levels[fished_pos].name;
 		const fished_level_file = levels[fished_pos].filename;
 
-		const fished_score = lists.find(l => l.value === list).score(fished_pos, level_count);
+		const fished_score = levels[fished_pos].points ?? listData.score(fished_pos, level_count);
 		
 		const userdata = await db[list].findOne({ where: { user: id } });
 		let totalAmount;

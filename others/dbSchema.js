@@ -57,28 +57,6 @@ module.exports = {
 			});
 		}
 
-		db.tags = sequelize.define('tags', {
-			user: {
-				type: DataTypes.STRING,
-			},
-			tag: {
-				type: DataTypes.STRING,
-			},
-		},
-		{
-			freezeTableName: true,
-		});
-
-		db.processed = sequelize.define('processed', {
-			id: {
-				type: DataTypes.STRING,
-				primaryKey: true,
-			},
-		},
-		{
-			freezeTableName: true,
-		});
-
 		db.guilds = sequelize.define('guilds', {
 			guild_id: {
 				type: DataTypes.STRING,
@@ -112,6 +90,9 @@ module.exports = {
 				filename: {
 					type: DataTypes.STRING,
 				},
+				points: {
+					type: DataTypes.FLOAT,
+				}
 			},
 			{
 				freezeTableName: true,

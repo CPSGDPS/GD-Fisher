@@ -43,14 +43,14 @@ const cache = require('./others/dbSchema').createCacheSchema(sequelize);
 
 // Initialize client
 async function init() {
-	logger.info('-'.repeat(40));
-	logger.info('GD Fisher starting...');
-	logger.info('-'.repeat(40));
+	logger.info('Startup - ' + '-'.repeat(40));
+	logger.info('Startup - ' + 'GD Fisher starting...');
+	logger.info('Startup - ' + '-'.repeat(40));
 	await sequelizeInit(db, cache);
 	await clientInit(client, db);
 	await updateCache.execute();
 
-	logger.info('Logging in with discord...');
+	logger.info('Startup - ' + 'Logging in with discord...');
 	client.login(process.env.DISCORD_TOKEN);
 }
 

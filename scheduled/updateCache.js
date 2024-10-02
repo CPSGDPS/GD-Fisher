@@ -10,21 +10,39 @@ module.exports = {
 	async execute() {
 		const { cache } = require('../index.js');
 
-		logger.info('Updating cached levels...');
-		for (const list of lists.map(l => l.value)) {
-			logger.info(`Updating ${list} list...`);
-			await cloneOrPullRepo(list);
-			logger.info('Parsing levels...');
-			const levels = await parseLevels(list);
-		
-			await cache[list].destroy({ where: {}});
-			try {
-				await cache[list].bulkCreate(levels);
-				logger.info(`Successfully updated ${levels.length} cached levels.`);
-			} catch (error) {
-				logger.error(`Couldn't udate cached levels, something went wrong with sequelize: ${error}`);
+		logger.info('Scheduled - ' + 'Updating cached levels...');
+		for (const list of lists) {
+			logger.info('Scheduled - ' + `Updating ${list.value} list...`);
+			if (list.repo) {
+				await cloneOrPullRepo(list.value);
 			}
+			logger.info('Scheduled - ' + 'Parsing levels...');
+			let levels = [];
+			if (list.cache) {
+				levels = await list.cache();
+			} else {
+				levels = await parseLevels(list.value);
+			}
+
+			if (list.score) {
+				levels = levels.map((level) => {
+					level.points = list.score(level.position, levels.length);
+					return level;
+				});
+			}
+			
+			if (levels.length > 0) {
+				await cache[list.value].destroy({ where: {}});
+				try {
+					await cache[list.value].bulkCreate(levels);
+					logger.info('Scheduled - ' + `Successfully updated ${levels.length} cached levels.`);
+				} catch (error) {
+					logger.error('Scheduled - ' + `Couldn't udate cached levels, something went wrong with sequelize: ${error}`);
+				}
+			} else {
+				logger.error('Scheduled - ' + 'Canceled updating levels cachee: no levels found.');
+			}
+		logger.info('Scheduled - ' + 'Successfully updated cached levels.');
 		}
-		logger.info('Successfully updated cached levels.');
 	},
 };

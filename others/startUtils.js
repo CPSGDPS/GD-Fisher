@@ -7,11 +7,11 @@ const logger = log4js.getLogger();
 
 module.exports = {
 	async clientInit(client) {
-		logger.info('Initializing client...');
+		logger.info('Startup - ' + 'Initializing client...');
 		// Commands
 		client.commands = new Collection();
 		client.cooldowns = new Collection();
-		logger.info('  Loading commands');
+		logger.info('Startup - ' + '  Loading commands');
 		const commandsPath = path.join(__dirname, '../commands');
 
 		if (fs.existsSync(commandsPath)) {
@@ -22,18 +22,18 @@ module.exports = {
 				if ('data' in command && 'execute' in command && 'enabled' in command) {
 					if (command.enabled) {
 						client.commands.set(command.data.name, command);
-						logger.info(`    Loaded ${command.data.name} from ${filePath}`);
+						logger.info('Startup - ' + `    Loaded ${command.data.name} from ${filePath}`);
 					} else {
-						logger.info(`    Ignored disabled command ${filePath}`);
+						logger.info('Startup - ' + `    Ignored disabled command ${filePath}`);
 					}
 				} else {
-					logger.warn(`    The command at ${filePath} is missing a required "data", "execute" or "enabled" property.`);
+					logger.warn('Startup - ' + `    The command at ${filePath} is missing a required "data", "execute" or "enabled" property.`);
 				}
 			}
 		}
 
 		// Buttons
-		logger.info('  Loading buttons');
+		logger.info('Startup - ' + '  Loading buttons');
 		client.buttons = new Collection();
 		const buttonsPath = path.join(__dirname, '../buttons');
 
@@ -43,12 +43,12 @@ module.exports = {
 				const filePath = path.join(buttonsPath, file);
 				const button = require(filePath);
 				client.buttons.set(button.customId, button);
-				logger.info(`    Loaded ${button.customId} from ${filePath}`);
+				logger.info('Startup - ' + `    Loaded ${button.customId} from ${filePath}`);
 			}
 		}
 
 		// Events
-		logger.info('  Loading events');
+		logger.info('Startup - ' + '  Loading events');
 		const eventsPath = path.join(__dirname, '../events');
 
 		if (fs.existsSync(eventsPath)) {
@@ -61,26 +61,26 @@ module.exports = {
 				} else {
 					client.on(event.name, (...args) => event.execute(...args));
 				}
-				logger.info(`    Loaded ${event.name} from ${filePath}`);
+				logger.info('Startup - ' + `    Loaded ${event.name} from ${filePath}`);
 			}
 		}
 
-		logger.info('Client initialization done');
+		logger.info('Startup - ' + 'Client initialization done');
 	},
 
 	// Sequelize sync init
 	async sequelizeInit(db, cache) {
-		logger.info('Syncing database data...');
+		logger.info('Startup - ' + 'Syncing database data...');
 		for (const table of Object.keys(db)) await db[table].sync({ alter: true});
-		logger.info('Syncing cache data...');
+		logger.info('Startup - ' + 'Syncing cache data...');
 		for (const table of Object.keys(cache)) await cache[table].sync({ alter: true});
-		logger.info('Sequelize sync done');
+		logger.info('Startup - ' + 'Sequelize sync done');
 	},
 
 	// Scheduled cron tasks
 	async scheduledTasksInit() {
 		
-		logger.info('Setting up scheduled tasks');
+		logger.info('Startup - ' + 'Setting up scheduled tasks');
 		const scheduledPath = path.join(__dirname, '../scheduled');
 		if (fs.existsSync(scheduledPath)) {
 			const scheduledFiles = fs.readdirSync(scheduledPath).filter(file => file.endsWith('.js'));
@@ -92,28 +92,27 @@ module.exports = {
 				if ("name" in task && "cron" in task && "enabled" in task && "execute" in task) {
 					if (task.enabled) {
 						cron.schedule(task.cron, task.execute);
-						logger.info(`  Started ${task.name}(${task.cron}) from ${filePath}`);
+						logger.info('Startup - ' + `  Started ${task.name}(${task.cron}) from ${filePath}`);
 					} else {
-						logger.info(`  Ignored disabled ${task.name}(${task.cron}) from ${filePath}`);
+						logger.info('Startup - ' + `  Ignored disabled ${task.name}(${task.cron}) from ${filePath}`);
 					}
 				} else {
-					logger.warn(`  The task at ${filePath} is missing a required "name", "cron", "enabled" or "execute" property.`);
+					logger.warn('Startup - ' + `  The task at ${filePath} is missing a required "name", "cron", "enabled" or "execute" property.`);
 				}
 			}
 		}
-		logger.info('Scheduled tasks setup done');
+		logger.info('Startup - ' + 'Scheduled tasks setup done');
 	},
 
 	async updateGuilds(client) {
 		const { db } = require('../index.js');
-		logger.info('Updating guilds');
+		logger.info('Startup - ' + 'Updating guilds');
 		for (const guild of client.guilds.cache.values()) {
-			logger.info(`Connected to guild: ${guild.name} (${guild.id})`);
+			logger.info('Startup - ' + `Connected to guild: ${guild.name} (${guild.id})`);
 			if (await db.guilds.findOne({ where: { guild_id: guild.id } })) {
-				logger.info(`Guild already exists in database, updating`);
 				await db.guilds.update({ guild_name: guild.name, guild_member_count: guild.memberCount, enabled: true }, { where: { guild_id: guild.id }});
 			} else {
-				logger.info(`Guild does not exist in database, adding`);
+				logger.info('Startup - ' + `Guild does not exist in database, creating`);
 				await db.guilds.create({
 					guild_id: guild.id,
 					guild_name: guild.name,
@@ -122,6 +121,6 @@ module.exports = {
 				});
 			}
 		}
-		logger.info('Guilds updated');
+		logger.info('Startup - ' + 'Guilds updated');
 	}
 }

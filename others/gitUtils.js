@@ -7,24 +7,24 @@ module.exports = {
 	async cloneOrPullRepo(list) {
 		const { git } = require('../index');
 
-		logger.info('Updating GitHub repositories...');
+		logger.info('Git - ' + 'Updating GitHub repositories...');
 		
 		try {
 			const repoUrl = lists.find(l => l.value === list).repo;
 			const localRepoPath =  path.resolve(__dirname, `../data/repos/${list}`);
 			
 			if (!fs.existsSync(localRepoPath)) {
-				logger.info('Cloning the repository for the first time, this may take a while...');
+				logger.info('Git - ' + 'Cloning the repository for the first time, this may take a while...');
 				await git.clone(repoUrl, localRepoPath);
 			} else {
-				logger.info('Pulling the latest changes from the repository...');
+				logger.info('Git - ' + 'Pulling the latest changes from the repository...');
 				await git.cwd(localRepoPath).pull();
 			}
 		} catch (error) {
-			logger.error(`Error updating the repository:\n${error}`);
+			logger.error('Git - ' + `Error updating the repository:\n${error}`);
 			return -1;
 		}
-		logger.info('Successfully updated the repository');
+		logger.info('Git - ' + 'Successfully updated the repository');
 		
 	},
 	async parseLevels(list) {
@@ -34,7 +34,7 @@ module.exports = {
 		try {
 			list_data = JSON.parse(fs.readFileSync(path.join(localRepoPath, 'data/_list.json'), 'utf8'));
 		} catch (parseError) {
-			logger.error(`Unable to parse data from _list.json:\n${parseError}`);
+			logger.error('Git - ' + `Unable to parse data from _list.json:\n${parseError}`);
 			return -1;
 		}
 
@@ -44,7 +44,7 @@ module.exports = {
 			try {
 				parsedData = JSON.parse(fs.readFileSync(path.join(localRepoPath, `data/${filename}.json`), 'utf8'));
 			} catch (parseError) {
-				logger.error(`Unable to parse data from ${filename}.json:\n${parseError}`);
+				logger.error('Git - ' + `Unable to parse data from ${filename}.json:\n${parseError}`);
 				continue;
 			}
 			

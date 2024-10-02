@@ -9,7 +9,7 @@ module.exports = [
 			const baseFactor = 0.0005832492374192035997815;
 			const b = (level_count - 1) * baseFactor;
 			const a = 600 * Math.sqrt(b);
-			return (a / Math.sqrt(pos / 50 + b) - 100);
+			return (a / Math.sqrt((pos - 1) / 50 + b) - 100);
 		},
 	},
 	{ 
@@ -18,8 +18,34 @@ module.exports = [
 		value:'hdl',
 		repo:'https://github.com/Robaleg9/HardDemonList.git',
 		cutoff: 150,
-		score: (pos, level_count) => {
-			return ((-0.22371358 * (pos + 1)) + 50.22371358);
+		score: (pos, _) => {
+			return ((-0.22371358 * (pos)) + 50.22371358);
+		}
+	},
+	{
+		name:'IDL',
+		fullname: "Insane Demon List",
+		value:'idl',
+		cutoff: 150,
+		cache: async () => {
+			const logger = require('log4js').getLogger();
+			try {
+				const list = await fetch("https://insanedemonlist.com/api/levels");
+				return (await list.json()).map((level) => {
+					return {
+						name: level.name,
+						position: level.position,
+						filename: level.id,
+					}
+				});
+			} catch(error) {
+				logger.error('Failed to fetch IDL: ' + error);
+				return [];
+			}
+		},
+		score: (pos, _) => {
+			if (pos > 150) return 0;
+			return Math.round(100*((74875 - 375*pos)/298)) / 100
 		}
 	}
 ]

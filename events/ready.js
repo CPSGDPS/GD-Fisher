@@ -6,10 +6,10 @@ module.exports = {
 	name: Events.ClientReady,
 	once: true,
 	async execute(client) {
-		logger.log(`Logged in as ${client.user.tag}`);
+		logger.log(`Startup - Logged in as ${client.user.tag}`);
 		await scheduledTasksInit();
 		await updateGuilds(client);
-		logger.log(`Initialization complete`);
+		logger.log(`Startup - Initialization complete`);
 		return 1;
 	},
 };
