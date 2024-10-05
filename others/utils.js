@@ -12,6 +12,7 @@ module.exports = {
 
 	async fish(interaction, list) {
 		const { db, cache } = require('../index.js');
+		await interaction.deferReply();
 		const id = interaction.user.id;
 		const name = interaction.user.tag;
 		const listData = lists.find(l => l.value === list);
@@ -21,10 +22,10 @@ module.exports = {
 			levels = await cache[list].findAll({ order: [['position', 'ASC']]});
 		} catch (error) {
 			logger.error('Error fetching levels:', error);
-			return await interaction.reply(':x: An error occurred while fetching the levels');
+			return await interaction.editReply(':x: An error occurred while fetching the levels');
 		}
 		if (!levels || levels.length === 0) {
-			return await interaction.reply(':x: No levels available');
+			return await interaction.editReply(':x: No levels available');
 		}
 
 		const level_count = Math.min(levels.length, listData.cutoff ?? levels.length);
@@ -60,7 +61,7 @@ module.exports = {
 			}
 			catch (error) {
 				logger.error(error);
-				return await interaction.reply(':x: An error occurred while getting the fished list data.');
+				return await interaction.editReply(':x: An error occurred while getting the fished list data.');
 			}
 			const fishedIndex = fishedListData.indexOf(fished_level_file);
 			if (fishedIndex === -1) {
@@ -76,7 +77,7 @@ module.exports = {
 				fishedListFrequency = JSON.stringify(fishedListFrequencyData);
 			} catch (error) {
 				logger.error(error);
-				return await interaction.reply(':x: An error occurred while saving the fished list data.');
+				return await interaction.editReply(':x: An error occurred while saving the fished list data.');
 			}
 
 			try {
@@ -91,10 +92,10 @@ module.exports = {
 				});
 			} catch (error) {
 				logger.error(error);
-				return await interaction.reply(':x: An error occurred while updating the user data.');
+				return await interaction.editReply(':x: An error occurred while updating the user data.');
 			}
 		}
 
-		return await interaction.reply(`> **${listData?.name}**\n> **${name}** fished **${fished_level_name}** (TOP ${fished_pos + 1})${userID != id ? ` for <@${userID}>` : ''}\n> +${Math.round(fished_score * 100) / 100} points (Total: ${Math.round(totalAmount * 100) / 100} points)`);
+		return await interaction.editReply(`> **${listData?.name}**\n> **${name}** fished **${fished_level_name}** (TOP ${fished_pos + 1})${userID != id ? ` for <@${userID}>` : ''}\n> +${Math.round(fished_score * 100) / 100} points (Total: ${Math.round(totalAmount * 100) / 100} points)`);
 	}
 }
