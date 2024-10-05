@@ -47,5 +47,32 @@ module.exports = [
 			if (pos > 150) return 0;
 			return Math.round(100*((74875 - 375*pos)/298)) / 100
 		}
+	},
+	{
+		name:'CL',
+		fullname: "Challenge List",
+		value:'cl',
+		cutoff: 100,
+		cache: async () => {
+			const logger = require('log4js').getLogger();
+			try {
+				const list = await fetch("https://challengelist.gd/api/v1/demons/?limit=100");
+				return (await list.json()).map((level) => {
+					return {
+						name: level.name,
+						position: level.position,
+						filename: level.id,
+					}
+				});
+			} catch(error) {
+				logger.error('Failed to fetch Challenge List: ' + error);
+				return [];
+			}
+		},
+		score: (pos, level_count) => {
+			top_value = 250.0;
+			low_value = 15.0;
+			return (top_value * Math.exp(Math.log(top_value / low_value) / (1.0 - level_count) * (pos - 1.0)))
+		}
 	}
 ]
