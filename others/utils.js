@@ -1,10 +1,7 @@
 const logger = require('log4js').getLogger();
 const lists = require('../others/lists.js');
-const { Collection } = require('discord.js');
-const cooldowns = new Collection();
 
 module.exports = {
-	listCooldown: 3600,
 	async getList(interaction) {
 		const { db } = require('../index.js');
 	 	return interaction.options.getString('list') 
@@ -18,21 +15,6 @@ module.exports = {
 		const id = interaction.user.id;
 		const name = interaction.user.tag;
 		const listData = lists.find(l => l.value === list);
-
-		 const now = Date.now();
-		 const userListKey = `${id}-${list}`;
-		 const cooldownAmount = this.listCooldown * 1000;
-
-		 if (cooldowns.has(userListKey)) {
-			 const expirationTime = cooldowns.get(userListKey) + cooldownAmount;
-			 if (now < expirationTime) {
-				 const expiredTimestamp = Math.round(expirationTime / 1000);
-				 return interaction.reply({ content: `Please wait, you are on a cooldown for the \`${listData?.name}\` list. You can fish again <t:${expiredTimestamp}:R>.`, ephemeral: true });
-			 }
-		 }
- 
-		 cooldowns.set(userListKey, now);
-		 setTimeout(() => cooldowns.delete(userListKey), cooldownAmount);
 
 		let levels;
 		try {

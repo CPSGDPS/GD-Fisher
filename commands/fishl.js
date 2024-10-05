@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const lists = require('../others/lists.js');
 const { fish } = require('../others/utils.js');
+const { checkCooldown } = require('../others/cooldowns.js');
 
 const listSubcommands = lists.map(list => ({
     name: list.value,
@@ -31,6 +32,10 @@ module.exports = {
 
 	async execute(interaction) {
 		const subcommand = interaction.options.getSubcommand();
+		const expiredTimestamp = checkCooldown(interaction.user.id, subcommand);
+		if (expiredTimestamp) {
+			return await interaction.reply({content:`:x: You are on cooldown for the\`${lists.find(l => l.value === subcommand).name}\` list. You can fish again in <t:${expiredTimestamp}:R>.`, ephemeral: true });
+		}
 		await fish(interaction, subcommand);
 	},
 };
