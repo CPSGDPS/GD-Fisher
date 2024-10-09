@@ -130,7 +130,7 @@ module.exports = {
 			const selectLeaderboard = new StringSelectMenuBuilder()
                 .setCustomId('select-leaderboard')
                 .addOptions(lists.map((l) => ({
-                    label: l.name,
+                    label: `${l.name} (${l.fullname})`,
                     value: l.value
                 })))
                 .setPlaceholder(`List: ${lists.find((l) => l.value === list).name}`);
